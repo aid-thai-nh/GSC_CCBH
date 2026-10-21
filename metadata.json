@@ -1,0 +1,6 @@
+{
+  "name": "Ôn Thi Chứng Chỉ Đại Lý Bảo Hiểm - Cheat Sheet",
+  "description": "Tài liệu lý thuyết Quy định thi, Từ viết tắt, Đại lý bảo hiểm, Nguyên tắc bảo hiểm với hệ thống thi thử random 40 câu, thi theo chuyên đề và theo dõi mục tiêu 100% điểm tuyệt đối.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
