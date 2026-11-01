@@ -8,7 +8,23 @@ export const FlashcardsView: React.FC = () => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [masteredIds, setMasteredIds] = useState<Set<string>>(new Set());
 
-  const categories = ['ALL', 'Nguyên tắc bảo hiểm', 'Rủi ro & Khái niệm', 'Đại lý bảo hiểm', 'Quy định thi', 'Viết tắt tiếng Việt', 'Quy tắc tiếng Anh', 'Tái bảo hiểm'];
+  const categories = [
+    'ALL',
+    'Hợp đồng bảo hiểm',
+    'Bảo hiểm tài sản & thiệt hại',
+    'Tài sản kỹ thuật',
+    'Bảo hiểm xe cơ giới',
+    'Bảo hiểm con người',
+    'Bảo hiểm trách nhiệm',
+    'Tái bảo hiểm',
+    'Bẫy luật & Hàng hải',
+    'Nguyên tắc bảo hiểm',
+    'Rủi ro & Khái niệm',
+    'Đại lý bảo hiểm',
+    'Quy định thi',
+    'Viết tắt tiếng Việt',
+    'Quy tắc tiếng Anh'
+  ];
 
   const filteredCards = useMemo(() => {
     if (selectedCat === 'ALL') return FLASHCARDS_DATA;

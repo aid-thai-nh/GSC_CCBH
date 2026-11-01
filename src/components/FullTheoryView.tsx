@@ -1,19 +1,59 @@
-import React, { useState } from 'react';
-import { THEORY_CHAPTERS, TheoryChapter } from '../data/theoryData';
+import React, { useState, useMemo } from 'react';
+import {
+  THEORY_CHAPTERS,
+  TheoryChapter,
+  CHAPTER_DIFFICULTY_META,
+  DifficultyLevel
+} from '../data/theoryData';
 import { RenderTable, RenderList, RenderNote } from './TableCard';
 import { AudioReader } from './AudioReader';
-import { Copy, Check, Sparkles, BookOpen } from 'lucide-react';
+import { Copy, Check, Bookmark, ArrowUpDown, Filter, Sparkles, Award } from 'lucide-react';
 
 export const FullTheoryView: React.FC = () => {
   const [activeChapterId, setActiveChapterId] = useState<string>('all');
   const [onlyMnemonics, setOnlyMnemonics] = useState<boolean>(false);
   const [copied, setCopied] = useState(false);
+  const [sortByDifficulty, setSortByDifficulty] = useState<boolean>(true);
+  const [difficultyFilter, setDifficultyFilter] = useState<'ALL' | DifficultyLevel>('ALL');
+
+  // Compute sorted & filtered chapters
+  const allProcessedChapters = useMemo(() => {
+    let list = [...THEORY_CHAPTERS];
+    if (sortByDifficulty) {
+      list.sort((a, b) => {
+        const rankA = CHAPTER_DIFFICULTY_META[a.id]?.orderRank ?? 99;
+        const rankB = CHAPTER_DIFFICULTY_META[b.id]?.orderRank ?? 99;
+        return rankA - rankB;
+      });
+    }
+    return list;
+  }, [sortByDifficulty]);
+
+  const chaptersToDisplay = useMemo(() => {
+    if (activeChapterId !== 'all') {
+      return THEORY_CHAPTERS.filter((ch) => ch.id === activeChapterId);
+    }
+
+    let list = allProcessedChapters;
+    if (difficultyFilter !== 'ALL') {
+      list = list.filter((ch) => CHAPTER_DIFFICULTY_META[ch.id]?.difficulty === difficultyFilter);
+    }
+    return list;
+  }, [activeChapterId, allProcessedChapters, difficultyFilter]);
+
+  // Filter blocks if only mnemonics mode is active
+  const filterBlocks = (blocks: TheoryChapter['blocks']) => {
+    if (!onlyMnemonics) return blocks;
+    return blocks.filter((b) => b.type === 'note' && (b as any).variant === 'mnemonic');
+  };
 
   // Generate full markdown text for export/copy
   const getFullMarkdown = () => {
-    let md = '# TÀI LIỆU ÔN THI CHỨNG CHỈ ĐẠI LÝ BẢO HIỂM\n\n';
-    THEORY_CHAPTERS.forEach((ch) => {
-      md += `## ${ch.title} (${ch.badge})\n${ch.summary}\n\n`;
+    let md = '# TÀI LIỆU ÔN THI CHỨNG CHỈ ĐẠI LÝ BẢO HIỂM (TRỌN BỘ 18 CHUYÊN ĐỀ TỪ DỄ ĐẾN KHÓ)\n\n';
+    allProcessedChapters.forEach((ch) => {
+      const meta = CHAPTER_DIFFICULTY_META[ch.id];
+      md += `## Bước ${meta?.orderRank || '•'}: ${ch.title} [${meta?.difficultyLabel || 'Chuyên đề'}] (${ch.badge})\n`;
+      md += `${ch.summary}\n\n`;
       ch.blocks.forEach((block) => {
         if (onlyMnemonics && block.type !== 'note' && (block as any).variant !== 'mnemonic') {
           return;
@@ -47,17 +87,6 @@ export const FullTheoryView: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const chaptersToDisplay =
-    activeChapterId === 'all'
-      ? THEORY_CHAPTERS
-      : THEORY_CHAPTERS.filter((ch) => ch.id === activeChapterId);
-
-  // Filter blocks if only mnemonics mode is active
-  const filterBlocks = (blocks: TheoryChapter['blocks']) => {
-    if (!onlyMnemonics) return blocks;
-    return blocks.filter((b) => b.type === 'note' && (b as any).variant === 'mnemonic');
-  };
-
   // Prepare full speech text for reading out loud
   const fullSpeechText = chaptersToDisplay
     .map((ch) => {
@@ -81,121 +110,246 @@ export const FullTheoryView: React.FC = () => {
     .filter(Boolean)
     .join('. ');
 
+  const getDifficultyBadgeStyle = (diff?: DifficultyLevel) => {
+    switch (diff) {
+      case 'easy':
+        return 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+      case 'medium':
+        return 'bg-blue-50 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+      case 'hard':
+        return 'bg-amber-50 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-200 dark:border-amber-800';
+      case 'expert':
+        return 'bg-purple-50 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 border-purple-200 dark:border-purple-800';
+      default:
+        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Chapter Selection Bar & Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 md:p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs">
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto text-xs no-scrollbar">
-          <button
-            onClick={() => setActiveChapterId('all')}
-            className={`px-3.5 py-2 rounded-xl font-bold transition cursor-pointer whitespace-nowrap ${
-              activeChapterId === 'all'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
-            }`}
-          >
-            Toàn bộ {THEORY_CHAPTERS.length} chương
-          </button>
-          {THEORY_CHAPTERS.map((ch) => (
+      {/* Chapter Selection Bar & Controls - OCD Aligned */}
+      <div className="p-4 md:p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs space-y-4">
+        {/* Row 1: Sort by Difficulty & Filter Pills */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
+              <Filter className="w-3.5 h-3.5 text-blue-600" />
+              Lọc cấp độ:
+            </span>
             <button
-              key={ch.id}
-              onClick={() => setActiveChapterId(ch.id)}
-              className={`px-3 py-2 rounded-xl font-semibold transition cursor-pointer whitespace-nowrap ${
-                activeChapterId === ch.id
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+              onClick={() => {
+                setDifficultyFilter('ALL');
+                setActiveChapterId('all');
+              }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                difficultyFilter === 'ALL'
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              {ch.title}
+              Tất cả (18)
             </button>
-          ))}
+            <button
+              onClick={() => {
+                setDifficultyFilter('easy');
+                setActiveChapterId('all');
+              }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer border ${
+                difficultyFilter === 'easy'
+                  ? 'bg-emerald-600 text-white border-emerald-600 font-semibold'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60'
+              }`}
+            >
+              Cấp 1: Dễ ⭐ (3)
+            </button>
+            <button
+              onClick={() => {
+                setDifficultyFilter('medium');
+                setActiveChapterId('all');
+              }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer border ${
+                difficultyFilter === 'medium'
+                  ? 'bg-blue-600 text-white border-blue-600 font-semibold'
+                  : 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900/60'
+              }`}
+            >
+              Cấp 2: Trung bình ⭐⭐ (4)
+            </button>
+            <button
+              onClick={() => {
+                setDifficultyFilter('hard');
+                setActiveChapterId('all');
+              }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer border ${
+                difficultyFilter === 'hard'
+                  ? 'bg-amber-600 text-white border-amber-600 font-semibold'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/60'
+              }`}
+            >
+              Cấp 3: Nâng cao ⭐⭐⭐ (4)
+            </button>
+            <button
+              onClick={() => {
+                setDifficultyFilter('expert');
+                setActiveChapterId('all');
+              }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer border ${
+                difficultyFilter === 'expert'
+                  ? 'bg-purple-600 text-white border-purple-600 font-semibold'
+                  : 'bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-900/60'
+              }`}
+            >
+              Cấp 4: Chuyên sâu ⭐⭐⭐⭐ (7)
+            </button>
+          </div>
+
+          {/* Sắp xếp Toggle & Copy */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setSortByDifficulty(!sortByDifficulty)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer border border-slate-200 dark:border-slate-700"
+              title="Đổi giữa lộ trình Dễ → Khó và thứ tự mặc định"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 text-blue-600" />
+              <span>{sortByDifficulty ? 'Lộ trình: Dễ → Khó' : 'Thứ tự: Tiêu chuẩn'}</span>
+            </button>
+
+            <button
+              onClick={() => setOnlyMnemonics(!onlyMnemonics)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border ${
+                onlyMnemonics
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900 dark:border-slate-100 font-semibold'
+                  : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+              }`}
+              title="Chỉ hiển thị các hộp Mẹo nhớ then chốt"
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>{onlyMnemonics ? 'Đang lọc: Mẹo nhớ' : 'Chỉ Mẹo nhớ'}</span>
+            </button>
+
+            <button
+              onClick={handleCopyMarkdown}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer shadow-xs"
+              title="Sao chép toàn bộ lý thuyết dạng Markdown"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Đã chép!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Sao chép</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* View Mode & Audio Toolbar */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Toggle Mẹo học nhanh button */}
+        {/* Row 2: Chapter Navigation Tabs with Order Rank & Badges */}
+        <div className="flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar py-1">
           <button
-            onClick={() => setOnlyMnemonics(!onlyMnemonics)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-              onlyMnemonics
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900 hover:bg-indigo-100'
+            onClick={() => setActiveChapterId('all')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer whitespace-nowrap ${
+              activeChapterId === 'all'
+                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
-            title="Chỉ hiển thị các khối Mẹo nhớ nhanh & Thần chú làm bài"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{onlyMnemonics ? 'Hiện toàn bộ lý thuyết' : 'Chỉ xem Mẹo nhớ nhanh'}</span>
+            Tất cả ({chaptersToDisplay.length} chương)
           </button>
+          {allProcessedChapters.map((ch) => {
+            const meta = CHAPTER_DIFFICULTY_META[ch.id];
+            const isSelected = activeChapterId === ch.id;
 
-          {/* Female Vietnamese Audio Reader */}
+            return (
+              <button
+                key={ch.id}
+                onClick={() => setActiveChapterId(ch.id)}
+                className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className="font-mono opacity-80">{meta?.orderRank}.</span>
+                <span>{ch.title}</span>
+                <span className="text-[10px] opacity-75 font-mono">({meta?.difficultyLabel})</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Global Audio Reader Header */}
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
           <AudioReader
+            title={
+              activeChapterId === 'all'
+                ? `Toàn bộ 18 chuyên đề lý thuyết (Sắp xếp từ Dễ đến Khó)`
+                : (THEORY_CHAPTERS.find((c) => c.id === activeChapterId)?.title || 'Lý thuyết trọng tâm')
+            }
             textToRead={fullSpeechText}
-            title={onlyMnemonics ? 'Mẹo nhớ nhanh' : activeChapterId === 'all' ? 'Toàn bộ lý thuyết' : 'Chương đang chọn'}
           />
-
-          {/* Copy Markdown */}
-          <button
-            onClick={handleCopyMarkdown}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-            title="Sao chép toàn bộ nội dung lý thuyết định dạng Markdown"
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="text-emerald-600 font-bold">Đã chép!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>Sao chép</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
 
-      {/* Chapters Content */}
-      <div className="space-y-10">
-        {chaptersToDisplay.map((chapter: TheoryChapter, chIdx) => {
-          const blocksToRender = filterBlocks(chapter.blocks);
-          if (blocksToRender.length === 0) return null;
+      {/* Chapters Content Display */}
+      <div className="space-y-8">
+        {chaptersToDisplay.map((chapter) => {
+          const blocks = filterBlocks(chapter.blocks);
+          if (blocks.length === 0) return null;
+          const meta = CHAPTER_DIFFICULTY_META[chapter.id];
 
           return (
             <section
               key={chapter.id}
-              id={chapter.id}
-              className="scroll-mt-6 p-6 md:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm transition-all"
+              className="p-5 md:p-7 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-6"
             >
-              {/* Chapter Header */}
-              <div className="border-b border-slate-100 dark:border-slate-800 pb-5 mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2.5 py-0.5 rounded-md text-xs font-bold tracking-wide uppercase bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
-                    Chương {chIdx + 1}
-                  </span>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    {chapter.badge}
-                  </span>
+              {/* Chapter Header with Difficulty Evaluation Badge */}
+              <div className="pb-4 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                      Bước {meta?.orderRank || '•'} / 18
+                    </span>
+                    <span
+                      className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${getDifficultyBadgeStyle(
+                        meta?.difficulty
+                      )}`}
+                    >
+                      {meta?.difficultyLabel} • Cấp độ {meta?.level} ({meta?.levelName})
+                    </span>
+                    <span className="font-mono text-xs font-medium px-2 py-0.5 rounded bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-800">
+                      {chapter.badge}
+                    </span>
+                    <span className="text-xs text-slate-500 font-mono ml-auto">
+                      {blocks.length} phần nội dung
+                    </span>
+                  </div>
+                  <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                    {chapter.title}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    {chapter.summary}
+                  </p>
+                  {meta?.description && (
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
+                      🎯 Trọng tâm ôn thi: {meta.description}
+                    </div>
+                  )}
                 </div>
-                <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                  {chapter.title}
-                </h2>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {chapter.summary}
-                </p>
               </div>
 
-              {/* Blocks */}
-              <div className="space-y-2">
-                {blocksToRender.map((block, bIdx) => {
+              {/* Render Blocks */}
+              <div className="space-y-4">
+                {blocks.map((block, idx) => {
                   if (block.type === 'table') {
-                    return <RenderTable key={bIdx} block={block} />;
-                  }
-                  if (block.type === 'list') {
-                    return <RenderList key={bIdx} block={block} />;
-                  }
-                  if (block.type === 'note') {
-                    return <RenderNote key={bIdx} block={block} />;
+                    return <RenderTable key={idx} block={block} />;
+                  } else if (block.type === 'list') {
+                    return <RenderList key={idx} block={block} />;
+                  } else if (block.type === 'note') {
+                    return <RenderNote key={idx} block={block} />;
                   }
                   return null;
                 })}

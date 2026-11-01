@@ -124,17 +124,18 @@ export const RenderList: React.FC<{ block: ListBlock }> = ({ block }) => {
 };
 
 export const RenderNote: React.FC<{ block: NoteBlock }> = ({ block }) => {
-  const isMnemonic = block.variant === 'mnemonic';
-  const isAlert = block.variant === 'alert';
-  const isWarning = block.variant === 'warning';
+  const effectiveVariant = block.variant || block.tone || 'info';
+  const isMnemonic = effectiveVariant === 'mnemonic';
+  const isAlert = effectiveVariant === 'alert';
+  const isWarning = effectiveVariant === 'warning' || effectiveVariant === 'warn';
 
   const borderColor = isMnemonic
-    ? 'border-indigo-400 dark:border-indigo-600 bg-linear-to-r from-indigo-50/90 via-purple-50/70 to-pink-50/50 dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-pink-950/20 ring-1 ring-indigo-300 dark:ring-indigo-800'
+    ? 'border-slate-200 dark:border-slate-800 border-l-indigo-600 dark:border-l-indigo-400 bg-slate-50/80 dark:bg-slate-900/80'
     : isAlert
-    ? 'border-rose-300 dark:border-rose-900 bg-rose-50/70 dark:bg-rose-950/30'
+    ? 'border-rose-200 dark:border-rose-900/50 border-l-rose-600 dark:border-l-rose-400 bg-rose-50/40 dark:bg-rose-950/20'
     : isWarning
-    ? 'border-amber-300 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/30'
-    : 'border-blue-200 dark:border-blue-900 bg-blue-50/70 dark:bg-blue-950/30';
+    ? 'border-amber-200 dark:border-amber-900/50 border-l-amber-600 dark:border-l-amber-400 bg-amber-50/40 dark:bg-amber-950/20'
+    : 'border-slate-200 dark:border-slate-800 border-l-sky-600 dark:border-l-sky-400 bg-slate-50/60 dark:bg-slate-900/60';
 
   const iconColor = isMnemonic
     ? 'text-indigo-600 dark:text-indigo-400'
@@ -142,42 +143,44 @@ export const RenderNote: React.FC<{ block: NoteBlock }> = ({ block }) => {
     ? 'text-rose-600 dark:text-rose-400'
     : isWarning
     ? 'text-amber-600 dark:text-amber-400'
-    : 'text-blue-600 dark:text-blue-400';
+    : 'text-sky-600 dark:text-sky-400';
 
   const textColor = isMnemonic
-    ? 'text-indigo-950 dark:text-indigo-100 font-black'
+    ? 'text-slate-900 dark:text-white font-bold'
     : isAlert
-    ? 'text-rose-950 dark:text-rose-200'
+    ? 'text-rose-950 dark:text-rose-200 font-semibold'
     : isWarning
-    ? 'text-amber-950 dark:text-amber-200'
-    : 'text-blue-950 dark:text-blue-200';
+    ? 'text-amber-950 dark:text-amber-200 font-semibold'
+    : 'text-slate-900 dark:text-slate-100 font-semibold';
 
   return (
-    <div className={`my-5 p-4 md:p-5 rounded-2xl border-l-4 border ${borderColor} shadow-xs transition-all`}>
+    <div className={`my-4 p-4 rounded-xl border border-l-4 ${borderColor} shadow-xs transition-colors`}>
       <div className="flex items-start gap-3">
-        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isMnemonic ? 'bg-indigo-100 dark:bg-indigo-900/60' : ''}`}>
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+          isMnemonic ? 'bg-indigo-100/70 dark:bg-indigo-900/40' : 'bg-slate-100 dark:bg-slate-800'
+        }`}>
           {isMnemonic ? (
-            <span className="text-lg">🧠</span>
+            <span className="text-sm select-none">🧠</span>
           ) : isAlert ? (
-            <AlertCircle className={`w-5 h-5 ${iconColor}`} />
+            <AlertCircle className={`w-4 h-4 ${iconColor}`} />
           ) : isWarning ? (
-            <AlertTriangle className={`w-5 h-5 ${iconColor}`} />
+            <AlertTriangle className={`w-4 h-4 ${iconColor}`} />
           ) : (
-            <Info className={`w-5 h-5 ${iconColor}`} />
+            <Info className={`w-4 h-4 ${iconColor}`} />
           )}
         </div>
-        <div className="space-y-1.5 flex-1">
-          <div className="flex items-center gap-2">
-            <h4 className={`text-sm md:text-base ${textColor}`}>
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className={`text-sm ${textColor}`}>
               {block.title}
             </h4>
             {isMnemonic && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300">
-                Mẹo độc quyền
+              <span className="text-[10px] font-semibold tracking-wide px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                Mẹo ghi nhớ
               </span>
             )}
           </div>
-          <div className="text-sm leading-relaxed text-slate-800 dark:text-slate-200 whitespace-pre-line font-medium">
+          <div className="text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line">
             {block.text}
           </div>
         </div>

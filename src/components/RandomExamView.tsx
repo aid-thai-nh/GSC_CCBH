@@ -59,9 +59,16 @@ export const RandomExamView: React.FC = () => {
   // Setup Step 1: Exam Type Mode ('ALL' or 'SINGLE')
   const [examScopeMode, setExamScopeMode] = useState<'ALL' | 'SINGLE'>('ALL');
   // If 'SINGLE', which specific chapter is selected:
-  const [selectedSpecificTopic, setSelectedSpecificTopic] = useState<string>('Quy định thi & chứng chỉ');
-  // Setup Step 2: Question Count (10, 20, 40)
+  const [selectedSpecificTopic, setSelectedSpecificTopic] = useState<string>('Hợp đồng bảo hiểm');
+  // Setup Step 1: Topic difficulty filter
+  const [topicDifficultyFilter, setTopicDifficultyFilter] = useState<'ALL' | 'easy' | 'medium' | 'hard' | 'expert'>('ALL');
+  // Setup Step 2: Question Count (10, 20, 40, 100, or ALL)
   const [selectedQuestionCount, setSelectedQuestionCount] = useState<number>(40);
+
+  // In-exam question filter ('ALL' | 'UNANSWERED' | 'ANSWERED')
+  const [questionFilter, setQuestionFilter] = useState<'ALL' | 'UNANSWERED' | 'ANSWERED'>('ALL');
+  // Expandable question jump grid
+  const [isGridExpanded, setIsGridExpanded] = useState<boolean>(false);
 
   // Persistent stats
   const [totalAttempts, setTotalAttempts] = useState<number>(0);
@@ -87,37 +94,115 @@ export const RandomExamView: React.FC = () => {
   // Traps explanation drawer state
   const [showTrapsModal, setShowTrapsModal] = useState<boolean>(false);
 
-  // Specific topics list
+  // Specific topics list (Sorted strictly from EASIEST to HARDEST)
   const specificTopics = [
     {
       id: 'Quy định thi & chứng chỉ',
       title: 'Quy định thi & chứng chỉ',
-      badge: 'Cấu trúc & mốc thời hạn',
+      difficulty: 'easy' as const,
+      difficultyLabel: 'Dễ ⭐',
+      rank: 1,
+      badge: 'Cấu trúc đề, đỗ ≥ 75%, 6 loại CC, mốc 3-5-10-20 ngày',
       count: QUESTION_BANK.filter((q) => q.category === 'Quy định thi & chứng chỉ').length
     },
     {
       id: 'Từ viết tắt & thuật ngữ',
       title: 'Từ viết tắt & thuật ngữ',
-      badge: 'CAR, EAR, CPM, Tái bảo hiểm',
+      difficulty: 'easy' as const,
+      difficultyLabel: 'Dễ ⭐',
+      rank: 2,
+      badge: 'DNBH, BMBH, NĐBH, STBH, P&I, ABI',
       count: QUESTION_BANK.filter((q) => q.category === 'Từ viết tắt & thuật ngữ').length
-    },
-    {
-      id: 'Đại lý bảo hiểm',
-      title: 'Đại lý bảo hiểm',
-      badge: 'Quyền hạn, hoa hồng TT 67',
-      count: QUESTION_BANK.filter((q) => q.category === 'Đại lý bảo hiểm').length
-    },
-    {
-      id: 'Nguyên tắc bảo hiểm',
-      title: 'Nguyên tắc bảo hiểm',
-      badge: '10 nguyên tắc, Thế quyền, Khoán',
-      count: QUESTION_BANK.filter((q) => q.category === 'Nguyên tắc bảo hiểm').length
     },
     {
       id: 'Rủi ro & Khái niệm cơ bản',
       title: 'Rủi ro & Khái niệm cơ bản',
-      badge: 'Hazard - Peril - Loss, 5 biện pháp QTRR',
+      difficulty: 'easy' as const,
+      difficultyLabel: 'Dễ ⭐',
+      rank: 3,
+      badge: 'Hazard - Peril - Loss, 5 biện pháp quản trị',
       count: QUESTION_BANK.filter((q) => q.category === 'Rủi ro & Khái niệm cơ bản').length
+    },
+    {
+      id: 'Nguyên tắc bảo hiểm',
+      title: 'Nguyên tắc bảo hiểm',
+      difficulty: 'medium' as const,
+      difficultyLabel: 'Trung bình ⭐⭐',
+      rank: 4,
+      badge: '10 nguyên tắc, thế quyền, khoán, trung thực',
+      count: QUESTION_BANK.filter((q) => q.category === 'Nguyên tắc bảo hiểm').length
+    },
+    {
+      id: 'Đại lý bảo hiểm',
+      title: 'Đại lý bảo hiểm',
+      difficulty: 'medium' as const,
+      difficultyLabel: 'Trung bình ⭐⭐',
+      rank: 5,
+      badge: 'Quyền hạn 4 không, hoa hồng TT 67, Điều 129',
+      count: QUESTION_BANK.filter((q) => q.category === 'Đại lý bảo hiểm').length
+    },
+    {
+      id: 'Hợp đồng bảo hiểm',
+      title: 'Hợp đồng bảo hiểm',
+      difficulty: 'medium' as const,
+      difficultyLabel: 'Trung bình ⭐⭐',
+      rank: 6,
+      badge: 'Vô hiệu, hủy bỏ, đơn phương chấm dứt, thời hạn 1 năm',
+      count: QUESTION_BANK.filter((q) => q.category === 'Hợp đồng bảo hiểm').length
+    },
+    {
+      id: 'Bảo hiểm con người',
+      title: 'Bảo hiểm con người',
+      difficulty: 'medium' as const,
+      difficultyLabel: 'Trung bình ⭐⭐',
+      rank: 7,
+      badge: 'Thời gian chờ 365/270 ngày, khoán, tai nạn',
+      count: QUESTION_BANK.filter((q) => q.category === 'Bảo hiểm con người').length
+    },
+    {
+      id: 'Bảo hiểm xe cơ giới',
+      title: 'Bảo hiểm xe cơ giới',
+      difficulty: 'hard' as const,
+      difficultyLabel: 'Nâng cao ⭐⭐⭐',
+      rank: 8,
+      badge: 'TNDS 150 triệu, hoa hồng xe máy 20%, tạm ứng',
+      count: QUESTION_BANK.filter((q) => q.category === 'Bảo hiểm xe cơ giới').length
+    },
+    {
+      id: 'Bảo hiểm tài sản & thiệt hại',
+      title: 'Bảo hiểm tài sản & thiệt hại',
+      difficulty: 'hard' as const,
+      difficultyLabel: 'Nâng cao ⭐⭐⭐',
+      rank: 9,
+      badge: 'Bảo hiểm trùng, dưới giá trị, cháy nổ M1-M5, ABI',
+      count: QUESTION_BANK.filter((q) => q.category === 'Bảo hiểm tài sản & thiệt hại').length
+    },
+    {
+      id: 'Bảo hiểm trách nhiệm',
+      title: 'Bảo hiểm trách nhiệm',
+      difficulty: 'hard' as const,
+      difficultyLabel: 'Nâng cao ⭐⭐⭐',
+      rank: 10,
+      badge: 'Claims-made, Loss-occurrence, CGL, Điều 57-61',
+      count: QUESTION_BANK.filter((q) => q.category === 'Bảo hiểm trách nhiệm').length
+    },
+    {
+      id: 'Tái bảo hiểm',
+      title: 'Tái bảo hiểm',
+      difficulty: 'expert' as const,
+      difficultyLabel: 'Chuyên sâu ⭐⭐⭐⭐',
+      rank: 11,
+      badge: 'Quota share, Surplus, Excess of loss, giữ lại ≤ 10%',
+      count: QUESTION_BANK.filter((q) => q.category === 'Tái bảo hiểm').length
+    },
+    {
+      id: 'Tài sản kỹ thuật',
+      title: 'Tài sản kỹ thuật',
+      difficulty: 'expert' as const,
+      difficultyLabel: 'Chuyên sâu ⭐⭐⭐⭐',
+      rank: 12,
+      badge: 'CAR/EAR Munich Re Phần I & II, CPM, MB',
+      count: QUESTION_BANK.filter((q) => q.category === 'Tài sản kỹ thuật').length
     }
   ];
 
@@ -195,6 +280,20 @@ export const RandomExamView: React.FC = () => {
 
     // Shuffle options for each question with Fisher-Yates and index-exact matching
     const preparedQuestions: ShuffledQuestion[] = selected.map((q) => {
+      // Check if any option refers to fixed letters like "A, B đúng", "A, C đúng", "Cả A và B", "Tất cả các phương án trên"
+      const hasPositional = q.options.some((opt) =>
+        /(^[ABCD][,\s]|cả [ABCD]|phương án [ABCD]|ý [ABCD]|câu [ABCD]|[ABCD] và [ABCD]|[ABCD], [ABCD]|tất cả các phương án trên|tất cả đều đúng)/i.test(opt)
+      );
+
+      if (hasPositional) {
+        return {
+          ...q,
+          shuffledOptions: [...q.options],
+          originalCorrectAnswer: q.options[q.correctIndex],
+          shuffledCorrectIndex: q.correctIndex
+        };
+      }
+
       const originalCorrectAnswer = q.options[q.correctIndex];
       const indexedOptions = q.options.map((opt, i) => ({ opt, originalIndex: i }));
       const shuffled = shuffleArray(indexedOptions);
@@ -344,12 +443,41 @@ export const RandomExamView: React.FC = () => {
     }, 0);
   }, [isSubmitted, currentQuestions, userAnswers]);
 
-  const questionsToRender = useMemo(() => {
-    if (isSubmitted && filterWrongOnly) {
-      return currentQuestions.filter((q) => userAnswers[q.id] !== q.shuffledCorrectIndex);
+  const currentPoolCount = useMemo(() => {
+    if (examScopeMode === 'ALL') {
+      return QUESTION_BANK.length;
     }
-    return currentQuestions;
-  }, [currentQuestions, isSubmitted, filterWrongOnly, userAnswers]);
+    return QUESTION_BANK.filter((q) => q.category === selectedSpecificTopic).length;
+  }, [examScopeMode, selectedSpecificTopic]);
+
+  const filteredTopics = useMemo(() => {
+    if (topicDifficultyFilter === 'ALL') return specificTopics;
+    return specificTopics.filter((t) => t.difficulty === topicDifficultyFilter);
+  }, [topicDifficultyFilter, specificTopics]);
+
+  const questionsToRender = useMemo(() => {
+    let list = currentQuestions;
+    if (isSubmitted && filterWrongOnly) {
+      list = list.filter((q) => userAnswers[q.id] !== q.shuffledCorrectIndex);
+    } else if (!isSubmitted) {
+      if (questionFilter === 'UNANSWERED') {
+        list = list.filter((q) => userAnswers[q.id] === undefined);
+      } else if (questionFilter === 'ANSWERED') {
+        list = list.filter((q) => userAnswers[q.id] !== undefined);
+      }
+    }
+    return list;
+  }, [currentQuestions, isSubmitted, filterWrongOnly, questionFilter, userAnswers]);
+
+  const handleJumpToNextUnanswered = () => {
+    const nextUnanswered = currentQuestions.find((q) => userAnswers[q.id] === undefined);
+    if (nextUnanswered) {
+      const el = document.getElementById(`q-${nextUnanswered.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  };
 
   const passingThreshold = Math.ceil(currentQuestions.length * 0.75);
 
@@ -576,15 +704,75 @@ export const RandomExamView: React.FC = () => {
             </button>
           </div>
 
-          {/* Sub-selector: Nếu chọn 'SINGLE', hiện danh sách 4 chuyên đề để bấm */}
+          {/* Sub-selector: Nếu chọn 'SINGLE', hiện danh sách 12 chuyên đề sắp xếp từ Dễ đến Khó */}
           {examScopeMode === 'SINGLE' && (
-            <div className="p-3.5 rounded-2xl bg-purple-50/50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/60 space-y-2 mt-2">
-              <span className="text-xs font-bold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
-                <Filter className="w-3.5 h-3.5 text-purple-600" />
-                Chọn chuyên đề bạn muốn thi:
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                {specificTopics.map((topic) => {
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-3 mt-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 uppercase tracking-wide">
+                  <Filter className="w-3.5 h-3.5 text-blue-600" />
+                  Chọn chuyên đề theo lộ trình (Sắp xếp từ Dễ đến Khó):
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setTopicDifficultyFilter('ALL')}
+                    className={`px-2 py-0.5 rounded-lg font-medium transition cursor-pointer ${
+                      topicDifficultyFilter === 'ALL'
+                        ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold'
+                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                    }`}
+                  >
+                    Tất cả (12)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTopicDifficultyFilter('easy')}
+                    className={`px-2 py-0.5 rounded-lg font-medium transition cursor-pointer border ${
+                      topicDifficultyFilter === 'easy'
+                        ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
+                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60'
+                    }`}
+                  >
+                    Dễ ⭐ (3)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTopicDifficultyFilter('medium')}
+                    className={`px-2 py-0.5 rounded-lg font-medium transition cursor-pointer border ${
+                      topicDifficultyFilter === 'medium'
+                        ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                        : 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900/60'
+                    }`}
+                  >
+                    Trung bình ⭐⭐ (4)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTopicDifficultyFilter('hard')}
+                    className={`px-2 py-0.5 rounded-lg font-medium transition cursor-pointer border ${
+                      topicDifficultyFilter === 'hard'
+                        ? 'bg-amber-600 text-white border-amber-600 font-bold'
+                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/60'
+                    }`}
+                  >
+                    Nâng cao ⭐⭐⭐ (3)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTopicDifficultyFilter('expert')}
+                    className={`px-2 py-0.5 rounded-lg font-medium transition cursor-pointer border ${
+                      topicDifficultyFilter === 'expert'
+                        ? 'bg-purple-600 text-white border-purple-600 font-bold'
+                        : 'bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-900/60'
+                    }`}
+                  >
+                    Chuyên sâu ⭐⭐⭐⭐ (2)
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {filteredTopics.map((topic) => {
                   const isSelected = selectedSpecificTopic === topic.id;
                   return (
                     <button
@@ -596,14 +784,26 @@ export const RandomExamView: React.FC = () => {
                       }}
                       className={`p-3 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
                         isSelected
-                          ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                          : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:border-purple-300'
+                          ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-sm'
+                          : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:border-slate-400'
                       }`}
                     >
-                      <div className="font-bold text-xs leading-snug">{topic.title}</div>
-                      <div className="flex items-center justify-between text-[11px] mt-2 opacity-90">
-                        <span>{topic.badge}</span>
-                        <span className="font-mono font-bold">({topic.count} câu)</span>
+                      <div>
+                        <div className="flex items-center justify-between text-[11px] mb-1 opacity-80">
+                          <span className="font-mono font-bold">#{topic.rank}</span>
+                          <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                            isSelected
+                              ? 'bg-white/20 text-white dark:bg-slate-900/20 dark:text-slate-900'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                          }`}>
+                            {topic.difficultyLabel}
+                          </span>
+                        </div>
+                        <div className="font-bold text-xs leading-snug">{topic.title}</div>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] mt-2 opacity-90 pt-1.5 border-t border-slate-100/30 dark:border-slate-800/30">
+                        <span className="truncate max-w-[140px] text-[10px]">{topic.badge}</span>
+                        <span className="font-mono font-bold shrink-0">({topic.count} câu)</span>
                       </div>
                     </button>
                   );
@@ -613,19 +813,23 @@ export const RandomExamView: React.FC = () => {
           )}
         </div>
 
-        {/* BƯỚC 2: CHỌN SỐ LƯỢNG CÂU HỎI (10 - 20 - 40 CÂU ĐÚNG ĐLBH CƠ BẢN) */}
+        {/* BƯỚC 2: CHỌN SỐ LƯỢNG CÂU HỎI (10, 20, 40, 100 HOẶC LÀM HẾT CÁC CÂU) */}
         <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <label className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <BookCheck className="w-4 h-4 text-emerald-600" />
               Bước 2: Chọn số lượng câu muốn thi
             </label>
-            <span className="text-xs text-slate-500">
-              Đang chọn: <strong>{selectedQuestionCount} câu</strong> (Cần đúng ≥ {Math.ceil(selectedQuestionCount * 0.75)} câu để đỗ)
+            <span className="text-xs text-slate-600 dark:text-slate-400">
+              Đang chọn:{' '}
+              <strong className="text-slate-900 dark:text-white font-mono">
+                {selectedQuestionCount >= currentPoolCount ? `LÀM HẾT ${currentPoolCount} CÂU` : `${selectedQuestionCount} câu`}
+              </strong>{' '}
+              (Cần đúng ≥ {Math.ceil(Math.min(selectedQuestionCount, currentPoolCount) * 0.75)} câu để đỗ)
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {/* 10 CÂU */}
             <button
               type="button"
@@ -633,13 +837,13 @@ export const RandomExamView: React.FC = () => {
                 setSelectedQuestionCount(10);
                 generateNewExam(examScopeMode, selectedSpecificTopic, 10);
               }}
-              className={`p-3.5 rounded-2xl border text-center transition cursor-pointer ${
+              className={`p-3 rounded-2xl border text-center transition cursor-pointer ${
                 selectedQuestionCount === 10
                   ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 ring-2 ring-emerald-500 font-bold'
                   : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 bg-slate-50/40 dark:bg-slate-800/30'
               }`}
             >
-              <div className="text-base md:text-lg font-black font-mono">10 CÂU</div>
+              <div className="text-base font-black font-mono">10 CÂU</div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Ôn siêu tốc (Đúng ≥ 8)</div>
             </button>
 
@@ -650,13 +854,13 @@ export const RandomExamView: React.FC = () => {
                 setSelectedQuestionCount(20);
                 generateNewExam(examScopeMode, selectedSpecificTopic, 20);
               }}
-              className={`p-3.5 rounded-2xl border text-center transition cursor-pointer ${
+              className={`p-3 rounded-2xl border text-center transition cursor-pointer ${
                 selectedQuestionCount === 20
                   ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 ring-2 ring-amber-500 font-bold'
                   : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 bg-slate-50/40 dark:bg-slate-800/30'
               }`}
             >
-              <div className="text-base md:text-lg font-black font-mono">20 CÂU</div>
+              <div className="text-base font-black font-mono">20 CÂU</div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Luyện 20/20 (Đúng ≥ 15)</div>
             </button>
 
@@ -667,7 +871,7 @@ export const RandomExamView: React.FC = () => {
                 setSelectedQuestionCount(40);
                 generateNewExam(examScopeMode, selectedSpecificTopic, 40);
               }}
-              className={`p-3.5 rounded-2xl border text-center transition cursor-pointer relative ${
+              className={`p-3 rounded-2xl border text-center transition cursor-pointer relative ${
                 selectedQuestionCount === 40
                   ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-950 dark:text-blue-200 ring-2 ring-blue-600 font-bold'
                   : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 bg-slate-50/40 dark:bg-slate-800/30'
@@ -676,8 +880,55 @@ export const RandomExamView: React.FC = () => {
               <span className="absolute -top-2.5 right-2 text-[9px] font-bold px-2 py-0.5 bg-blue-600 text-white rounded-full uppercase shadow-xs">
                 Chuẩn Bộ TC
               </span>
-              <div className="text-base md:text-lg font-black font-mono">40 CÂU</div>
+              <div className="text-base font-black font-mono">40 CÂU</div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Chuẩn ĐLBH (Đúng ≥ 30)</div>
+            </button>
+
+            {/* 100 CÂU LUYỆN TĂNG CƯỜNG */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedQuestionCount(100);
+                generateNewExam(examScopeMode, selectedSpecificTopic, 100);
+              }}
+              className={`p-3 rounded-2xl border text-center transition cursor-pointer ${
+                selectedQuestionCount === 100
+                  ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200 ring-2 ring-indigo-600 font-bold'
+                  : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 bg-slate-50/40 dark:bg-slate-800/30'
+              }`}
+            >
+              <div className="text-base font-black font-mono">100 CÂU</div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Luyện sâu (Đúng ≥ 75)</div>
+            </button>
+
+            {/* LÀM HẾT CÁC CÂU LUÔN */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedQuestionCount(currentPoolCount);
+                generateNewExam(examScopeMode, selectedSpecificTopic, currentPoolCount);
+              }}
+              className={`col-span-2 sm:col-span-1 p-3 rounded-2xl border text-center transition cursor-pointer relative ${
+                selectedQuestionCount >= currentPoolCount
+                  ? 'border-slate-900 dark:border-slate-100 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-md ring-2 ring-slate-900 dark:ring-slate-100 font-bold'
+                  : 'border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white hover:border-slate-400 bg-white dark:bg-slate-900 font-bold'
+              }`}
+            >
+              <span className={`absolute -top-2.5 right-2 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase shadow-xs ${
+                selectedQuestionCount >= currentPoolCount
+                  ? 'bg-amber-500 text-slate-900'
+                  : 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900'
+              }`}>
+                Làm hết kho
+              </span>
+              <div className="text-base font-black font-mono">TẤT CẢ {currentPoolCount} CÂU</div>
+              <div className={`text-[11px] mt-0.5 ${
+                selectedQuestionCount >= currentPoolCount
+                  ? 'text-slate-300 dark:text-slate-700'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}>
+                {examScopeMode === 'ALL' ? 'Toàn bộ 662 câu' : `Hết ${selectedSpecificTopic}`}
+              </div>
             </button>
           </div>
         </div>
@@ -807,6 +1058,139 @@ export const RandomExamView: React.FC = () => {
         </div>
       </div>
 
+      {/* ============================================================== */}
+      {/* THANH ĐIỀU HƯỚNG VÀ LỌC CÂU HỎI (HỖ TRỢ LÀM HẾT CÁC CÂU)      */}
+      {/* ============================================================== */}
+      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+        {/* Progress bar */}
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center justify-between text-xs gap-1">
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
+              Tiến độ làm bài:{' '}
+              <strong className="text-slate-900 dark:text-white font-mono">{answeredCount}</strong> / {currentQuestions.length} câu{' '}
+              <span className="text-slate-500 font-mono">
+                ({currentQuestions.length > 0 ? Math.round((answeredCount / currentQuestions.length) * 100) : 0}%)
+              </span>
+            </span>
+            <span className="text-slate-500 font-mono text-[11px]">
+              {currentQuestions.length - answeredCount === 0
+                ? '✅ Đã hoàn thành tất cả các câu!'
+                : `Còn lại ${currentQuestions.length - answeredCount} câu chưa trả lời`}
+            </span>
+          </div>
+          <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+            <div
+              className="h-full bg-blue-600 transition-all duration-300 rounded-full"
+              style={{
+                width: `${currentQuestions.length > 0 ? (answeredCount / currentQuestions.length) * 100 : 0}%`
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Filter Chips & Quick Jump Actions */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-slate-500 font-medium">Xem:</span>
+            <button
+              type="button"
+              onClick={() => setQuestionFilter('ALL')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer ${
+                questionFilter === 'ALL'
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              Tất cả ({currentQuestions.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuestionFilter('UNANSWERED')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer border ${
+                questionFilter === 'UNANSWERED'
+                  ? 'bg-amber-600 text-white border-amber-600 font-bold'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/60'
+              }`}
+            >
+              Chưa làm ({currentQuestions.length - answeredCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuestionFilter('ANSWERED')}
+              className={`px-2.5 py-1 rounded-lg font-medium transition cursor-pointer border ${
+                questionFilter === 'ANSWERED'
+                  ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                  : 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900/60'
+              }`}
+            >
+              Đã làm ({answeredCount})
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!isSubmitted && answeredCount < currentQuestions.length && (
+              <button
+                type="button"
+                onClick={handleJumpToNextUnanswered}
+                className="px-3 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800 text-xs font-semibold hover:bg-amber-100 transition cursor-pointer flex items-center gap-1"
+                title="Nhảy tới câu chưa trả lời tiếp theo"
+              >
+                <span>Tới câu chưa làm ➔</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsGridExpanded(!isGridExpanded)}
+              className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-200 transition cursor-pointer flex items-center gap-1"
+            >
+              <span>{isGridExpanded ? 'Ẩn lưới số câu' : `Lưới ${currentQuestions.length} câu`}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Expandable Question Grid (Jump to any question smoothly) */}
+        {isGridExpanded && (
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto no-scrollbar">
+            <div className="text-[11px] text-slate-500 mb-2 font-medium">
+              Bấm vào số câu để cuộn nhanh tới câu hỏi tương ứng:
+            </div>
+            <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-15 lg:grid-cols-20 gap-1.5">
+              {currentQuestions.map((q, idx) => {
+                const userChoice = userAnswers[q.id];
+                const isAnswered = userChoice !== undefined;
+                const isCorrect = userChoice === q.shuffledCorrectIndex;
+
+                let btnColor =
+                  'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+                if (isSubmitted) {
+                  btnColor = isCorrect
+                    ? 'bg-emerald-600 text-white border-emerald-600 font-bold'
+                    : 'bg-rose-600 text-white border-rose-600 font-bold';
+                } else if (isAnswered) {
+                  btnColor =
+                    'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold border-slate-900 dark:border-slate-100';
+                }
+
+                return (
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById(`q-${q.id}`);
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                    className={`py-1 text-center text-xs font-mono rounded border transition hover:opacity-80 cursor-pointer ${btnColor}`}
+                    title={`Câu ${idx + 1}: ${isAnswered ? 'Đã làm' : 'Chưa làm'}`}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* KẾT QUẢ SAU KHI NỘP BÀI */}
       {isSubmitted && (
         <div
@@ -879,6 +1263,7 @@ export const RandomExamView: React.FC = () => {
           return (
             <div
               key={q.id}
+              id={`q-${q.id}`}
               className={`p-5 rounded-2xl bg-white dark:bg-slate-900 border transition-all ${
                 isSubmitted
                   ? isCorrect
@@ -1159,6 +1544,9 @@ export const RandomExamView: React.FC = () => {
                 <option value="Đại lý bảo hiểm">Đại lý bảo hiểm</option>
                 <option value="Nguyên tắc bảo hiểm">Nguyên tắc bảo hiểm</option>
                 <option value="Rủi ro & Khái niệm cơ bản">Rủi ro & Khái niệm cơ bản</option>
+                <option value="Hợp đồng bảo hiểm">Hợp đồng bảo hiểm</option>
+                <option value="Bảo hiểm tài sản & thiệt hại">Bảo hiểm tài sản & thiệt hại</option>
+                <option value="Tài sản kỹ thuật">Tài sản kỹ thuật</option>
               </select>
             </div>
 
