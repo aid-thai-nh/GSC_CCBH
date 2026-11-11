@@ -4,13 +4,13 @@ import { Info, AlertTriangle, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export const RenderTable: React.FC<{ block: TableBlock }> = ({ block }) => {
   return (
-    <div className="my-6 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden transition-all">
-      <div className="px-5 py-3.5 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
-        <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400"></span>
+    <div className="my-6 rounded-2xl border border-slate-200/90 bg-white shadow-xs overflow-hidden transition-all">
+      <div className="px-5 py-3.5 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between">
+        <h3 className="font-semibold text-slate-800 text-sm md:text-base flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-blue-600"></span>
           {block.title}
         </h3>
-        <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+        <span className="text-xs text-slate-500 font-mono">
           {block.rows.length} mục
         </span>
       </div>
@@ -18,7 +18,7 @@ export const RenderTable: React.FC<{ block: TableBlock }> = ({ block }) => {
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-800/40 text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 font-semibold">
+            <tr className="border-b border-slate-200 bg-slate-100/60 text-xs uppercase tracking-wider text-slate-600 font-semibold">
               {block.head.map((col, idx) => (
                 <th key={idx} className="px-5 py-3 first:pl-5 last:pr-5">
                   {col}
@@ -26,21 +26,21 @@ export const RenderTable: React.FC<{ block: TableBlock }> = ({ block }) => {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+          <tbody className="divide-y divide-slate-100">
             {block.rows.map((row, rIdx) => (
               <tr
                 key={rIdx}
-                className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors group"
+                className="hover:bg-blue-50/30 transition-colors group"
               >
                 {row.map((cell, cIdx) => (
                   <td
                     key={cIdx}
                     className={`px-5 py-3.5 align-top ${
                       cIdx === 0
-                        ? 'font-bold text-slate-900 dark:text-white font-mono text-sm whitespace-nowrap'
+                        ? 'font-bold text-slate-900 font-mono text-sm whitespace-nowrap'
                         : cIdx === 1 && block.head.length > 2
-                        ? 'font-medium text-slate-800 dark:text-slate-200'
-                        : 'text-slate-600 dark:text-slate-300 leading-relaxed'
+                        ? 'font-medium text-slate-800'
+                        : 'text-slate-600 leading-relaxed'
                     }`}
                   >
                     {cell}
@@ -53,7 +53,7 @@ export const RenderTable: React.FC<{ block: TableBlock }> = ({ block }) => {
       </div>
 
       {block.note && (
-        <div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200/70 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 italic">
+        <div className="px-5 py-2.5 bg-slate-50 border-t border-slate-200/70 text-xs text-slate-600 italic">
           💡 {block.note}
         </div>
       )}
@@ -66,13 +66,13 @@ export const RenderList: React.FC<{ block: ListBlock }> = ({ block }) => {
     <div
       className={`my-6 p-5 rounded-2xl border shadow-xs ${
         block.highlight
-          ? 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60'
-          : 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800'
+          ? 'bg-amber-50/50 border-amber-200'
+          : 'bg-white border-slate-200/90'
       }`}
     >
       <h3
         className={`font-bold text-base mb-4 flex items-center gap-2 ${
-          block.highlight ? 'text-amber-900 dark:text-amber-200' : 'text-slate-900 dark:text-white'
+          block.highlight ? 'text-amber-900' : 'text-slate-900'
         }`}
       >
         <span
@@ -93,19 +93,19 @@ export const RenderList: React.FC<{ block: ListBlock }> = ({ block }) => {
               key={idx}
               className={`flex items-start gap-3 p-3 rounded-xl transition ${
                 block.highlight
-                  ? 'bg-white/70 dark:bg-slate-900/80 border border-amber-100 dark:border-amber-900/40'
-                  : 'bg-slate-50/80 dark:bg-slate-800/40 hover:bg-slate-100/80'
+                  ? 'bg-white/80 border border-amber-100'
+                  : 'bg-slate-50/80 hover:bg-slate-100/70 border border-slate-100'
               }`}
             >
               <CheckCircle2
                 className={`w-5 h-5 shrink-0 mt-0.5 ${
-                  block.highlight ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'
+                  block.highlight ? 'text-amber-600' : 'text-blue-600'
                 }`}
               />
-              <div className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              <div className="text-sm leading-relaxed text-slate-700">
                 {hasPrefix ? (
                   <>
-                    <strong className="text-slate-900 dark:text-white font-semibold">
+                    <strong className="text-slate-900 font-semibold">
                       {parts[0]}
                       {item.includes('—') ? ' — ' : ': '}
                     </strong>
@@ -130,34 +130,34 @@ export const RenderNote: React.FC<{ block: NoteBlock }> = ({ block }) => {
   const isWarning = effectiveVariant === 'warning' || effectiveVariant === 'warn';
 
   const borderColor = isMnemonic
-    ? 'border-slate-200 dark:border-slate-800 border-l-indigo-600 dark:border-l-indigo-400 bg-slate-50/80 dark:bg-slate-900/80'
+    ? 'border-indigo-200 border-l-indigo-600 bg-indigo-50/40'
     : isAlert
-    ? 'border-rose-200 dark:border-rose-900/50 border-l-rose-600 dark:border-l-rose-400 bg-rose-50/40 dark:bg-rose-950/20'
+    ? 'border-rose-200 border-l-rose-600 bg-rose-50/40'
     : isWarning
-    ? 'border-amber-200 dark:border-amber-900/50 border-l-amber-600 dark:border-l-amber-400 bg-amber-50/40 dark:bg-amber-950/20'
-    : 'border-slate-200 dark:border-slate-800 border-l-sky-600 dark:border-l-sky-400 bg-slate-50/60 dark:bg-slate-900/60';
+    ? 'border-amber-200 border-l-amber-600 bg-amber-50/40'
+    : 'border-blue-200 border-l-blue-600 bg-blue-50/30';
 
   const iconColor = isMnemonic
-    ? 'text-indigo-600 dark:text-indigo-400'
+    ? 'text-indigo-600'
     : isAlert
-    ? 'text-rose-600 dark:text-rose-400'
+    ? 'text-rose-600'
     : isWarning
-    ? 'text-amber-600 dark:text-amber-400'
-    : 'text-sky-600 dark:text-sky-400';
+    ? 'text-amber-600'
+    : 'text-blue-600';
 
   const textColor = isMnemonic
-    ? 'text-slate-900 dark:text-white font-bold'
+    ? 'text-slate-900 font-bold'
     : isAlert
-    ? 'text-rose-950 dark:text-rose-200 font-semibold'
+    ? 'text-rose-950 font-semibold'
     : isWarning
-    ? 'text-amber-950 dark:text-amber-200 font-semibold'
-    : 'text-slate-900 dark:text-slate-100 font-semibold';
+    ? 'text-amber-950 font-semibold'
+    : 'text-slate-900 font-semibold';
 
   return (
     <div className={`my-4 p-4 rounded-xl border border-l-4 ${borderColor} shadow-xs transition-colors`}>
       <div className="flex items-start gap-3">
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-          isMnemonic ? 'bg-indigo-100/70 dark:bg-indigo-900/40' : 'bg-slate-100 dark:bg-slate-800'
+          isMnemonic ? 'bg-indigo-100' : isAlert ? 'bg-rose-100' : isWarning ? 'bg-amber-100' : 'bg-blue-100'
         }`}>
           {isMnemonic ? (
             <span className="text-sm select-none">🧠</span>
@@ -175,12 +175,12 @@ export const RenderNote: React.FC<{ block: NoteBlock }> = ({ block }) => {
               {block.title}
             </h4>
             {isMnemonic && (
-              <span className="text-[10px] font-semibold tracking-wide px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+              <span className="text-[10px] font-semibold tracking-wide px-2 py-0.5 rounded bg-indigo-100 text-indigo-700">
                 Mẹo ghi nhớ
               </span>
             )}
           </div>
-          <div className="text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line">
+          <div className="text-xs sm:text-sm leading-relaxed text-slate-700 whitespace-pre-line">
             {block.text}
           </div>
         </div>
@@ -188,4 +188,3 @@ export const RenderNote: React.FC<{ block: NoteBlock }> = ({ block }) => {
     </div>
   );
 };
-

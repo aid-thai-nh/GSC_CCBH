@@ -156,7 +156,7 @@ export const SearchQuickFilter: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Search Input Bar - Monochromatic & Precise */}
+      {/* Search Input Bar */}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
@@ -164,22 +164,22 @@ export const SearchQuickFilter: React.FC = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Tra cứu: gõ 150 triệu, 365 ngày, claims-made, quota share, P&I, ICC A, CAR, HĐBH, vô hiệu..."
-          className="w-full pl-10 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-slate-400 dark:focus:border-slate-600 shadow-xs text-xs sm:text-sm"
+          className="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-blue-500 shadow-xs text-xs sm:text-sm"
         />
         {query && (
           <button
             onClick={() => setQuery('')}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md transition cursor-pointer"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 rounded-md transition cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
 
-      {/* Categories chips - Clean neutral buttons */}
+      {/* Categories chips */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-        <span className="text-slate-500 font-medium px-1 flex items-center gap-1 shrink-0">
-          <Tag className="w-3.5 h-3.5" /> Bộ lọc ({allItems.length} mục):
+        <span className="text-slate-600 font-medium px-1 flex items-center gap-1 shrink-0">
+          <Tag className="w-3.5 h-3.5 text-blue-600" /> Bộ lọc ({allItems.length} mục):
         </span>
         {categories.map((cat) => (
           <button
@@ -187,8 +187,8 @@ export const SearchQuickFilter: React.FC = () => {
             onClick={() => setSelectedCategory(cat)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer ${
               selectedCategory === cat
-                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold shadow-xs'
-                : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
             }`}
           >
             {cat === 'ALL' ? 'Tất cả' : cat}
@@ -199,7 +199,7 @@ export const SearchQuickFilter: React.FC = () => {
       {/* Results Count */}
       <div className="flex items-center justify-between text-xs text-slate-500 font-mono px-1">
         <span>
-          Tìm thấy <strong className="text-slate-900 dark:text-white">{filteredItems.length}</strong> kết quả
+          Tìm thấy <strong className="text-slate-900">{filteredItems.length}</strong> kết quả
         </span>
         {query && (
           <span>
@@ -213,28 +213,28 @@ export const SearchQuickFilter: React.FC = () => {
         {filteredItems.slice(0, 100).map((item) => (
           <div
             key={item.id}
-            className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition space-y-2"
+            className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs hover:border-blue-300 transition space-y-2"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">
+              <span className="font-mono font-bold text-slate-900 text-sm">
                 {item.keyword}
               </span>
-              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 text-slate-700 border border-slate-200">
                 {item.category}
               </span>
             </div>
 
-            <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+            <div className="text-xs sm:text-sm text-slate-700 leading-relaxed">
               {item.description}
             </div>
 
             {item.extra && (
-              <div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-100 dark:border-slate-800 pt-2">
+              <div className="text-xs text-slate-500 leading-relaxed border-t border-slate-100 pt-2">
                 {item.extra}
               </div>
             )}
 
-            <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/60 font-mono">
+            <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100 font-mono">
               <span className="truncate pr-2">{item.title}</span>
               <span className="shrink-0">{item.section}</span>
             </div>
@@ -242,7 +242,7 @@ export const SearchQuickFilter: React.FC = () => {
         ))}
 
         {filteredItems.length === 0 && (
-          <div className="col-span-full py-12 text-center text-xs text-slate-500 dark:text-slate-400">
+          <div className="col-span-full py-12 text-center text-xs text-slate-500">
             Không tìm thấy kết quả nào khớp với từ khóa &ldquo;{query}&rdquo;.
           </div>
         )}
